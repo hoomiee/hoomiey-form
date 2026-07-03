@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=2.0">
+    <title>悬浮机器人家庭环境适配度调研</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f0f2f5;
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', system-ui, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px; color: #1e293b;
+        }
+        .card {
+            max-width: 720px; width: 100%; background: #ffffff;
+            border-radius: 32px; padding: 32px 28px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.12);
+        }
+        h1 { font-size: 1.8rem; font-weight: 600; margin-bottom: 8px; color: #0f172a; }
+        .subtitle {
+            font-size: 0.95rem; color: #475569; margin-bottom: 24px;
+            line-height: 1.5; border-left: 4px solid #3b82f6;
+            padding: 12px 16px; background: #f8fafc; border-radius: 0 12px 12px 0;
+        }
+        .btn {
+            border-radius: 40px; padding: 12px 24px; font-size: 0.95rem; font-weight: 500;
+            cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center;
+            gap: 8px; background: #ffffff; border: 1px solid #cbd5e1; color: #1e293b;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04); -webkit-tap-highlight-color: transparent;
+        }
+        .btn-primary { background: #3b82f6; border-color: #3b82f6; color: white; box-shadow: 0 4px 10px rgba(59,130,246,0.3); }
+        .btn-outline { background: transparent; border: 1px solid #94a3b8; }
+        .btn-outline.active { background: #fef9c3; border-color: #eab308; color: #854d0e; font-weight: 600; }
+        .btn:active { transform: scale(0.97); }
+        .btn-audio {
+            min-width: 70px; background: #f1f5f9; border: 1px solid #cbd5e1;
+            display: inline-flex; align-items: center; gap: 5px; padding: 8px 14px;
+            border-radius: 20px; font-size: 0.85rem; color: #475569;
+        }
+        .btn-audio svg { width: 16px; height: 16px; fill: #3b82f6; flex-shrink: 0; }
+        .btn-audio.playing { background: #3b82f6; border-color: #2563eb; color: #fff; }
+        .btn-audio.playing svg { fill: #fff; }
+        .question-section { margin-bottom: 36px; }
+        .question-text {
+            font-size: 1.15rem; font-weight: 500; line-height: 1.6;
+            margin: 20px 0 16px; color: #0f172a; background: #f9fafb;
+            padding: 12px 16px; border-radius: 16px; border: 1px solid #e2e8f0;
+        }
+        .option-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+        .option-item {
+            display: flex; align-items: center; background: #f8fafc;
+            border-radius: 18px; padding: 14px 16px; border: 1px solid #e2e8f0;
+            transition: background 0.2s; flex-wrap: wrap;
+        }
+        .option-item:hover { background: #f1f5f9; }
+        .radio-input { width: 20px; height: 20px; margin-right: 14px; accent-color: #3b82f6; flex-shrink: 0; cursor: pointer; }
+        .checkbox-input { width: 20px; height: 20px; margin-right: 14px; accent-color: #3b82f6; flex-shrink: 0; cursor: pointer; }
+        .option-label { flex: 1; font-size: 0.98rem; color: #334155; line-height: 1.4; cursor: pointer; display: flex; flex-direction: column; padding-right: 12px; }
+        .option-desc { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
+        .input-text, textarea {
+            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1;
+            font-size: 0.95rem; margin-top: 8px; font-family: inherit;
+        }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { font-weight: 500; display: block; margin-bottom: 4px; }
+        .hidden { display: none !important; }
+        .submit-area { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; gap: 12px; }
+        .result-message {
+            background: #dcfce7; border: 1px solid #86efac; border-radius: 16px;
+            padding: 14px 18px; margin-top: 20px; font-weight: 500; color: #166534; display: none;
+        }
+        hr { border: none; border-top: 1px solid #e2e8f0; margin: 32px 0 20px; }
+        .footnote { font-size: 0.75rem; color: #94a3b8; margin-top: 20px; text-align: center; }
+        /* Q4 音频网格布局 3×2 */
+        .audio-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+        .audio-grid .audio-item {
+            background: #f8fafc; border-radius: 18px; border: 1px solid #e2e8f0;
+            padding: 16px 14px; cursor: pointer; transition: all 0.2s;
+            display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+        }
+        .audio-grid .audio-item:hover { background: #f1f5f9; }
+        .audio-grid .audio-item.selected { background: #eff6ff; border-color: #3b82f6; }
+        .audio-grid .audio-item .audio-btn {
+            width: 48px; height: 48px; border-radius: 50%; border: 2px solid #3b82f6;
+            background: #fff; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; flex-shrink: 0; position: relative;
+        }
+        .audio-grid .audio-item .audio-btn svg { width: 20px; height: 20px; fill: #3b82f6; transition: fill 0.2s; }
+        .audio-grid .audio-item .audio-btn:hover { background: #eff6ff; transform: scale(1.08); }
+        .audio-grid .audio-item .audio-btn.playing { background: #3b82f6; border-color: #2563eb; }
+        .audio-grid .audio-item .audio-btn.playing svg { fill: #fff; }
+        .audio-grid .audio-item .audio-text strong { font-size: 0.95rem; color: #334155; display: block; }
+        .audio-grid .audio-item .audio-text .option-desc { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
+        /* Q8 图片网格布局 */
+        .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+        .option-grid .grid-item {
+            background: #f8fafc; border-radius: 18px; border: 1px solid #e2e8f0;
+            overflow: hidden; cursor: pointer; transition: background 0.2s;
+        }
+        .option-grid .grid-item:hover { background: #f1f5f9; }
+        .option-grid .grid-item.selected { background: #eff6ff; border-color: #3b82f6; }
+        .option-grid .grid-item img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+        .option-grid .grid-item .grid-label {
+            display: flex; align-items: center; padding: 10px 12px; gap: 8px;
+        }
+        .option-grid .grid-item .grid-label .radio-input { margin-right: 6px; }
+        .option-grid .grid-item .grid-text { flex: 1; }
+        .option-grid .grid-item .grid-text strong { font-size: 0.95rem; color: #334155; }
+        .option-grid .grid-item .grid-text .option-desc { font-size: 0.8rem; color: #64748b; margin-top: 2px; }
+        @media (max-width: 480px) {
+            .card { padding: 20px 16px; border-radius: 24px; }
+            .audio-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .option-grid { gap: 10px; }
+            .option-grid .grid-item .grid-label { padding: 8px 10px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>🤖 悬浮机器人家庭环境适配度调研</h1>
+    <div class="subtitle">
+        本问卷旨在了解您对家庭悬浮机器人的噪音、尺寸及存在感的偏好。请佩戴耳机完成噪音部分。
+    </div>
+
+    <!-- 基础背景信息 -->
+    <div class="question-section">
+        <div class="question-text">📋 基础背景信息</div>
+        <div class="input-group">
+            <label>性别</label>
+            <div class="option-list" id="bgGender"></div>
+        </div>
+        <div class="input-group">
+            <label>年龄</label>
+            <div class="option-list" id="bgAge"></div>
+        </div>
+        <div class="input-group">
+            <label>职业身份</label>
+            <div class="option-list" id="bgOccupation"></div>
+            <div id="occupationOtherWrap" class="hidden" style="margin-top:8px;">
+                <input type="text" id="occupationOther" class="input-text" placeholder="请填写您的职业" style="width:60%;">
+            </div>
+        </div>
+        <div class="input-group">
+            <label>居住城市</label>
+            <input type="text" id="cityInput" class="input-text" placeholder="例如：北京、上海、苏州">
+        </div>
+        <div class="input-group">
+            <label>月收入</label>
+            <div class="option-list" id="bgIncome"></div>
+        </div>
+        <div class="input-group">
+            <label>居住类型</label>
+            <div class="option-list" id="bgResidenceType"></div>
+            <div id="residenceOtherWrap" class="hidden" style="margin-top:8px;">
+                <input type="text" id="residenceOther" class="input-text" placeholder="请填写您的居住类型" style="width:60%;">
+            </div>
+        </div>
+        <div class="input-group">
+            <label>户型</label>
+            <div class="option-list" id="bgRoomLayout"></div>
+            <div id="layoutOtherWrap" class="hidden" style="margin-top:8px;">
+                <input type="text" id="layoutOther" class="input-text" placeholder="请填写您的户型" style="width:60%;">
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- 第一部分：家庭环境基础信息 -->
+    <div class="question-section">
+        <div class="question-text">第一部分｜家庭环境基础信息</div>
+
+        <div class="input-group">
+            <label>1. 您家中目前是否养宠物？</label>
+            <div class="option-list" id="q1HasPet"></div>
+            <div id="petDetails" class="hidden" style="margin-top:12px; padding-left:20px; border-left:2px solid #cbd5e1;">
+                <label>宠物类型（可多选）：</label>
+                <div id="petTypes" class="option-list" style="gap:8px; margin-bottom:12px;"></div>
+                <div class="input-group">
+                    <label>其他：</label>
+                    <input type="text" id="petTypeOther" class="input-text" placeholder="请填写其他宠物类型" style="width:60%;">
+                </div>
+                <label>宠物体重大约：</label>
+                <div class="option-list" id="petWeight"></div>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>2. 您家中是否有需要关注或陪伴的老人、小孩？</label>
+            <div class="option-list" id="q2HasPeople" style="flex-direction:row; gap:24px;"></div>
+            <div id="peopleDetails" class="hidden" style="margin-top:12px; padding-left:20px; border-left:2px solid #cbd5e1;">
+                <div id="elderAgeGroup" class="hidden">
+                    <label>老人年龄：</label>
+                    <div class="option-list" id="elderAgeOptions"></div>
+                </div>
+                <div id="childAgeGroup" class="hidden">
+                    <label>儿童年龄：</label>
+                    <div class="option-list" id="childAgeOptions"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- 第二部分：飞行噪音接受度 -->
+    <div class="question-section">
+        <div class="question-text">
+            第二部分｜飞行噪音接受度<br>
+            <span style="font-size:0.9rem; color:#475569;">假设机器人在客厅等主要活动空间内，距离您约2米，高度与人接近，持续悬停工作。</span>
+        </div>
+
+        <label style="font-weight:500; display:block; margin-bottom:8px;">3. 白天日常活动时，您认为机器人最大的可接受运行声音接近：</label>
+        <div class="audio-grid" id="q3NoiseDay"></div>
+
+        <label style="font-weight:500; display:block; margin-bottom:8px;">4. 夜晚睡眠、阅读、休息环境中，您希望机器人运行声音：</label>
+        <div class="audio-grid" id="q4NoiseNight"></div>
+
+        <label style="font-weight:500; display:block; margin-bottom:8px;">5. 如果机器人为了降低噪音需要降低部分飞行性能，您的选择：</label>
+        <div class="option-list" id="q5TradeOff"></div>
+    </div>
+
+    <hr>
+
+    <!-- 第三部分：家庭空间与尺寸接受度 -->
+    <div class="question-section">
+        <div class="question-text">第三部分｜家庭空间与尺寸接受度</div>
+
+        <label style="font-weight:500; display:block; margin-bottom:8px;">6. 您家的客厅/主要活动空间面积大约：</label>
+        <div class="option-list" id="q6Area"></div>
+
+        <label style="font-weight:500; display:block; margin-bottom:8px;">7. 您家的室内层高（地面到天花板）约：</label>
+        <div class="option-list" id="q7Height"></div>
+
+        <label style="font-weight:500; display:block; margin-bottom:8px;">8. 您能接受最大的机器人尺寸（不影响功能情况下）：<br><span style="font-size:0.85rem; color:#64748b;">参考：20cm≈足球大小，30cm≈篮球大小，40cm≈小型行李箱厚度，50cm≈床头柜宽度</span></label>
+        <div class="option-grid" id="q8SizeAccept"></div>
+
+        <label style="font-weight:500; display:block; margin-bottom:8px;">9. 机器人达到什么尺寸会让您觉得"占空间"或影响活动？</label>
+        <div class="option-list" id="q9SizeOppressive"></div>
+    </div>
+
+    <hr>
+
+    <!-- 第四部分：存在感测试 -->
+    <div class="question-section">
+        <div class="question-text">第四部分｜悬浮机器人的存在感测试</div>
+
+        <label style="font-weight:500; display:block; margin-bottom:8px;">10. 机器人长期陪伴在家庭空间中，您更喜欢它：</label>
+        <div class="option-list" id="q10Presence"></div>
+
+        <label style="font-weight:500; display:block; margin-bottom:8px;">11. 机器人在您附近悬停（沙发旁、餐桌旁），您的感受：</label>
+        <div class="option-list" id="q11Feeling"></div>
+
+        <label style="font-weight:500; display:block; margin-bottom:8px;">12. 关于悬浮机器人，您更看重：</label>
+        <div style="display:flex; gap:24px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:200px;">
+                <p style="font-weight:500; margin-bottom:8px;">尺寸更重要：</p>
+                <div class="option-list" id="q12SizeImp"></div>
+            </div>
+            <div style="flex:1; min-width:200px;">
+                <p style="font-weight:500; margin-bottom:8px;">声音更重要：</p>
+                <div class="option-list" id="q12SoundImp"></div>
+            </div>
+        </div>
+
+        <label style="font-weight:500; display:block; margin-top:20px;">13. （开放题）如果您家购买一台悬浮机器人，您最担心的问题是什么？</label>
+        <textarea id="q13Concern" class="input-text" rows="3" placeholder="请填写您的想法…"></textarea>
+    </div>
+
+    <!-- 提交区域 -->
+    <div class="submit-area">
+        <button id="submitAllBtn" class="btn btn-primary">📤 提交全部答案</button>
+        <span style="font-size:0.85rem; color:#64748b;">（所有单选题与基本信息为必选，条件子项根据选择必填）</span>
+    </div>
+
+    <div id="globalResult" class="result-message" style="margin-top:20px;"></div>
+    <div class="footnote">💡 噪音试听已按相对分贝差调整，声音模拟真实场景。感谢您的参与！</div>
+</div>
+
+<script>
+    (function() {
+        // ==================== 音频引擎 ====================
+        let audioCtx = null;
+        let currentNodes = null;
+        let activeOptionKey = null;
+        window._q3Audio = null; // Q3 wav 播放引用
+        window._q4Audio = null; // Q4 wav 播放引用
+
+        const noiseLevels = [
+            { key: 'below30', label: '＜30 dB', desc: '几乎完全无感', gain: Math.pow(10, (25 - 60) / 20) },
+            { key: '30to40',  label: '30–40 dB', desc: '非常轻微存在感', gain: Math.pow(10, (35 - 60) / 20) },
+            { key: '40to50',  label: '40–50 dB', desc: '清晰可感知，但不干扰交流', gain: Math.pow(10, (45 - 60) / 20) },
+            { key: '50to60',  label: '50–60 dB', desc: '明显运行声，需要提高说话音量', gain: Math.pow(10, (55 - 60) / 20) },
+            { key: '60to70',  label: '60–70 dB', desc: '较强噪音，接近家用吸尘器低档', gain: Math.pow(10, (65 - 60) / 20) },
+            { key: 'above70', label: '＞70 dB', desc: '强噪音，明显干扰环境', gain: Math.pow(10, (75 - 60) / 20) }
+        ];
+
+        function getAudioContext() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+        function stopAllSound() {
+            if (currentNodes) {
+                try {
+                    if (currentNodes.oscs) currentNodes.oscs.forEach(o => { try { o.stop(); } catch(e) {} });
+                    if (currentNodes.noises) currentNodes.noises.forEach(n => { try { n.stop(); } catch(e) {} });
+                } catch (e) {}
+                if (currentNodes.masterGain) currentNodes.masterGain.disconnect();
+                currentNodes = null;
+            }
+            document.querySelectorAll('.btn-audio').forEach(btn => btn.classList.remove('playing'));
+            // 停止 Q3/Q4 wav 播放
+            document.querySelectorAll('.audio-grid .audio-btn.playing').forEach(btn => {
+                btn.classList.remove('playing');
+                const playIcon = btn.querySelector('.icon-play');
+                const pauseIcon = btn.querySelector('.icon-pause');
+                if (playIcon) playIcon.style.display = '';
+                if (pauseIcon) pauseIcon.style.display = 'none';
+            });
+            if (window._q3Audio) { window._q3Audio.pause(); window._q3Audio.currentTime = 0; window._q3Audio = null; }
+            if (window._q4Audio) { window._q4Audio.pause(); window._q4Audio.currentTime = 0; window._q4Audio = null; }
+            activeOptionKey = null;
+        }
+        function addOscillator(ctx, type, freq, gain, dest) {
+            const osc = ctx.createOscillator();
+            osc.type = type; osc.frequency.value = freq;
+            const gainNode = ctx.createGain(); gainNode.gain.value = gain;
+            osc.connect(gainNode); gainNode.connect(dest);
+            osc.start(); return osc;
+        }
+        function addNoise(ctx, color, gain, filterType, freq, dest, q) {
+            const bufferSize = ctx.sampleRate * 2;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            if (color === 'pink') {
+                let b0=0,b1=0,b2=0;
+                for(let i=0;i<bufferSize;i++){
+                    const white = Math.random()*2-1;
+                    b0=0.99886*b0+white*0.0555179;
+                    b1=0.99332*b1+white*0.0750759;
+                    b2=0.96900*b2+white*0.1538520;
+                    data[i]=(b0+b1+b2+white*0.5362)*0.11;
+                }
+            } else {
+                for(let i=0;i<bufferSize;i++) data[i]=Math.random()*2-1;
+            }
+            const source = ctx.createBufferSource();
+            source.buffer = buffer; source.loop = true;
+            const filter = ctx.createBiquadFilter(); filter.type = filterType; filter.frequency.value = freq;
+            if(q) filter.Q.value = q;
+            const gainNode = ctx.createGain(); gainNode.gain.value = gain;
+            source.connect(filter); filter.connect(gainNode); gainNode.connect(dest);
+            source.start(); return source;
+        }
+        function createSoundForLevel(key, dest) {
+            const ctx = getAudioContext();
+            const nodes = { oscs: [], noises: [] };
+            switch(key) {
+                case 'below30': nodes.noises.push(addNoise(ctx,'pink',0.03,'lowpass',1000,dest)); break;
+                case '30to40': nodes.oscs.push(addOscillator(ctx,'sine',80,0.1,dest)); nodes.oscs.push(addOscillator(ctx,'sine',160,0.05,dest)); nodes.noises.push(addNoise(ctx,'pink',0.08,'lowpass',800,dest)); break;
+                case '40to50': nodes.oscs.push(addOscillator(ctx,'sine',55,0.2,dest)); nodes.oscs.push(addOscillator(ctx,'sine',110,0.1,dest)); nodes.noises.push(addNoise(ctx,'pink',0.12,'lowpass',600,dest)); break;
+                case '50to60': nodes.oscs.push(addOscillator(ctx,'sine',120,0.25,dest)); nodes.oscs.push(addOscillator(ctx,'sine',240,0.12,dest)); nodes.noises.push(addNoise(ctx,'white',0.25,'bandpass',500,dest,0.5)); nodes.noises.push(addNoise(ctx,'pink',0.15,'lowpass',400,dest)); break;
+                case '60to70': nodes.oscs.push(addOscillator(ctx,'sawtooth',100,0.18,dest)); nodes.oscs.push(addOscillator(ctx,'sawtooth',200,0.1,dest)); nodes.noises.push(addNoise(ctx,'white',0.45,'bandpass',1500,dest,0.3)); nodes.noises.push(addNoise(ctx,'pink',0.3,'lowpass',2000,dest)); break;
+                case 'above70': nodes.oscs.push(addOscillator(ctx,'sine',40,0.35,dest)); nodes.oscs.push(addOscillator(ctx,'triangle',80,0.2,dest)); nodes.noises.push(addNoise(ctx,'white',0.5,'bandpass',2000,dest,0.2)); nodes.noises.push(addNoise(ctx,'pink',0.4,'lowpass',300,dest)); break;
+            }
+            return nodes;
+        }
+        function playSound(optionKey, gainCoeff, btnElement) {
+            stopAllSound();
+            const ctx = getAudioContext();
+            const masterGain = ctx.createGain();
+            masterGain.gain.value = gainCoeff;
+            masterGain.connect(ctx.destination);
+            const soundNodes = createSoundForLevel(optionKey, masterGain);
+            currentNodes = { oscs: soundNodes.oscs, noises: soundNodes.noises, masterGain };
+            activeOptionKey = optionKey;
+            document.querySelectorAll('.btn-audio').forEach(b => b.classList.remove('playing'));
+            if (btnElement) btnElement.classList.add('playing');
+        }
+        function togglePlay(optionKey, gainCoeff, btnElement) {
+            if (activeOptionKey === optionKey) stopAllSound();
+            else playSound(optionKey, gainCoeff, btnElement);
+        }
+
+        // ==================== 动态构建选项 ====================
+        function buildRadioOptions(containerId, options, withAudio = false) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            options.forEach(opt => {
+                const div = document.createElement('div');
+                div.className = 'option-item';
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = containerId;
+                input.value = opt.key;
+                input.className = 'radio-input';
+                input.id = `${containerId}_${opt.key}`;
+                const label = document.createElement('label');
+                label.className = 'option-label';
+                label.setAttribute('for', input.id);
+                label.innerHTML = `<strong>${opt.label}</strong>${opt.desc ? `<span class="option-desc">${opt.desc}</span>` : ''}`;
+                div.appendChild(input); div.appendChild(label);
+                if (withAudio && opt.gain !== undefined) {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-audio';
+                    btn.setAttribute('data-option', opt.key);
+                    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg><span>试听</span>';
+                    btn.type = 'button';
+                    btn.addEventListener('click', (e) => { e.preventDefault(); togglePlay(opt.key, opt.gain, btn); });
+                    div.appendChild(btn);
+                }
+                container.appendChild(div);
+            });
+        }
+
+        // ==================== 初始化所有选项 ====================
+        // 基础背景信息（性别去掉其他）
+        buildRadioOptions('bgGender', [
+            { key: 'male', label: '男' }, { key: 'female', label: '女' }
+        ]);
+        buildRadioOptions('bgAge', [
+            { key: 'under18', label: '18岁以下' }, { key: '18-25', label: '18～25岁' },
+            { key: '26-35', label: '26～35岁' }, { key: '36-45', label: '36～45岁' },
+            { key: '46-55', label: '46～55岁' }, { key: '56+', label: '56岁以上' }
+        ]);
+        buildRadioOptions('bgOccupation', [
+            { key: 'student', label: '学生' },
+            { key: 'employee', label: '上班族（企业/公务员/事业单位）' },
+            { key: 'freelancer', label: '自由职业' },
+            { key: 'retired', label: '退休' },
+            { key: 'other_occ', label: '其他' }
+        ]);
+        buildRadioOptions('bgIncome', [
+            { key: 'under3000', label: '3000元以下' }, { key: '3000-6000', label: '3000～6000元' },
+            { key: '6000-10000', label: '6000～10000元' }, { key: '10000-20000', label: '10000～20000元' },
+            { key: '20000+', label: '20000元以上' }, { key: 'no_answer', label: '不愿透露' }
+        ]);
+        buildRadioOptions('bgResidenceType', [
+            { key: 'apartment', label: '居民小区（多层/高层）' },
+            { key: 'bungalow', label: '平房/胡同' },
+            { key: 'villa', label: '别墅/排屋' },
+            { key: 'commercial', label: '商住两用' },
+            { key: 'other_res', label: '其他' }
+        ]);
+        buildRadioOptions('bgRoomLayout', [
+            { key: '1-1', label: '1室1厅' },
+            { key: '2-1', label: '2室1厅' },
+            { key: '2-2', label: '2室2厅' },
+            { key: '3-1', label: '3室1厅' },
+            { key: '3-2', label: '3室2厅' },
+            { key: '4plus', label: '4室及以上' },
+            { key: 'other_layout', label: '其他' }
+        ]);
+
+        // 显示/隐藏"其他"输入框
+        document.querySelectorAll('input[name="bgOccupation"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.getElementById('occupationOtherWrap').classList.toggle('hidden', radio.value !== 'other_occ');
+            });
+        });
+        document.querySelectorAll('input[name="bgResidenceType"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.getElementById('residenceOtherWrap').classList.toggle('hidden', radio.value !== 'other_res');
+            });
+        });
+        document.querySelectorAll('input[name="bgRoomLayout"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.getElementById('layoutOtherWrap').classList.toggle('hidden', radio.value !== 'other_layout');
+            });
+        });
+
+        // Q1 宠物
+        buildRadioOptions('q1HasPet', [{ key: 'no', label: '没有宠物' },{ key: 'yes', label: '有宠物' }]);
+        const petTypesContainer = document.getElementById('petTypes');
+        petTypesContainer.innerHTML = '';
+        ['猫','狗','鸟类','兔子/仓鼠等小型动物'].forEach((t,idx) => {
+            const key = ['cat','dog','bird','small'][idx];
+            petTypesContainer.innerHTML += `<label class="option-item"><input type="checkbox" name="petType" value="${key}" class="checkbox-input"> ${t}</label>`;
+        });
+        buildRadioOptions('petWeight', [
+            { key: 'under1kg', label: '1kg以下' },{ key: '1to5', label: '1～5kg' },
+            { key: '5to10', label: '5～10kg' },{ key: '10to20', label: '10～20kg' },{ key: 'above20', label: '20kg以上' }
+        ]);
+
+        document.getElementById('q2HasPeople').innerHTML = `
+            <label class="option-item"><input type="checkbox" id="hasElder" class="checkbox-input"> 有老人</label>
+            <label class="option-item"><input type="checkbox" id="hasChild" class="checkbox-input"> 有儿童</label>
+            <label class="option-item"><input type="checkbox" id="hasNone" class="checkbox-input"> 均无</label>
+        `;
+        buildRadioOptions('elderAgeOptions', [
+            { key: '50-60', label: '50～60岁' },{ key: '60-70', label: '60～70岁' },
+            { key: '70-80', label: '70～80岁' },{ key: '80+', label: '80岁以上' }
+        ]);
+        buildRadioOptions('childAgeOptions', [
+            { key: '0-3', label: '0～3岁' },{ key: '4-6', label: '4～6岁' },
+            { key: '7-12', label: '7～12岁' },{ key: '12+', label: '12岁以上' }
+        ]);
+
+        const hasElderCheck = document.getElementById('hasElder');
+        const hasChildCheck = document.getElementById('hasChild');
+        const hasNoneCheck = document.getElementById('hasNone');
+        const peopleDetails = document.getElementById('peopleDetails');
+        const elderAgeGroup = document.getElementById('elderAgeGroup');
+        const childAgeGroup = document.getElementById('childAgeGroup');
+        function updatePeopleDetails() {
+            const anyChecked = hasElderCheck.checked || hasChildCheck.checked;
+            peopleDetails.classList.toggle('hidden', !anyChecked);
+            elderAgeGroup.classList.toggle('hidden', !hasElderCheck.checked);
+            childAgeGroup.classList.toggle('hidden', !hasChildCheck.checked);
+        }
+        // “均无”与其他选项互斥
+        hasNoneCheck.addEventListener('change', () => {
+            if (hasNoneCheck.checked) {
+                hasElderCheck.checked = false;
+                hasChildCheck.checked = false;
+            }
+            updatePeopleDetails();
+        });
+        hasElderCheck.addEventListener('change', () => {
+            if (hasElderCheck.checked) hasNoneCheck.checked = false;
+            updatePeopleDetails();
+        });
+        hasChildCheck.addEventListener('change', () => {
+            if (hasChildCheck.checked) hasNoneCheck.checked = false;
+            updatePeopleDetails();
+        });
+        updatePeopleDetails();
+
+        const q1Radios = document.getElementsByName('q1HasPet');
+        const petDetails = document.getElementById('petDetails');
+        q1Radios.forEach(r => {
+            r.addEventListener('change', () => petDetails.classList.toggle('hidden', r.value !== 'yes'));
+        });
+
+        // Q3 音频网格布局（3×2）使用 wav 文件
+        (function() {
+            const container = document.getElementById('q3NoiseDay');
+            const q3Options = [
+                { key: 'below30', label: '＜30 dB', desc: '几乎完全无感', audio: 'assets/a.wav' },
+                { key: '30to40',  label: '30–40 dB', desc: '非常轻微存在感', audio: 'assets/b.wav' },
+                { key: '40to50',  label: '40–50 dB', desc: '清晰可感知，但不干扰交流', audio: 'assets/c.wav' },
+                { key: '50to60',  label: '50–60 dB', desc: '明显运行声，需要提高说话音量', audio: 'assets/d.wav' },
+                { key: '60to70',  label: '60–70 dB', desc: '较强噪音，接近家用吸尘器低档', audio: 'assets/e.wav' },
+                { key: 'above70', label: '＞70 dB', desc: '强噪音，明显干扰环境', audio: 'assets/f.wav' },
+            ];
+            let currentAudio = null;
+            let currentBtn = null;
+            q3Options.forEach(opt => {
+                const div = document.createElement('div');
+                div.className = 'audio-item';
+                div.innerHTML = `
+                    <div class="audio-btn" data-key="${opt.key}">
+                        <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <svg class="icon-pause" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; width:100%;">
+                        <input type="radio" name="q3NoiseDay" value="${opt.key}" class="radio-input" id="q3NoiseDay_${opt.key}" style="margin-right:4px;">
+                        <div class="audio-text">
+                            <strong>${opt.label}</strong>
+                            <div class="option-desc">${opt.desc}</div>
+                        </div>
+                    </div>
+                `;
+                const btn = div.querySelector('.audio-btn');
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (currentAudio && currentBtn === btn) {
+                        currentAudio.pause();
+                        currentAudio.currentTime = 0;
+                        currentAudio = null;
+                        btn.classList.remove('playing');
+                        btn.querySelector('.icon-play').style.display = '';
+                        btn.querySelector('.icon-pause').style.display = 'none';
+                        currentBtn = null;
+                        window._q3Audio = null;
+                        return;
+                    }
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio.currentTime = 0;
+                        if (currentBtn) {
+                            currentBtn.classList.remove('playing');
+                            currentBtn.querySelector('.icon-play').style.display = '';
+                            currentBtn.querySelector('.icon-pause').style.display = 'none';
+                        }
+                    }
+                    const audio = new Audio(opt.audio);
+                    audio.play();
+                    currentAudio = audio;
+                    currentBtn = btn;
+                    window._q3Audio = audio;
+                    btn.classList.add('playing');
+                    btn.querySelector('.icon-play').style.display = 'none';
+                    btn.querySelector('.icon-pause').style.display = '';
+                    audio.addEventListener('ended', () => {
+                        btn.classList.remove('playing');
+                        btn.querySelector('.icon-play').style.display = '';
+                        btn.querySelector('.icon-pause').style.display = 'none';
+                        currentAudio = null;
+                        currentBtn = null;
+                        window._q3Audio = null;
+                    });
+                });
+                div.addEventListener('click', (e) => {
+                    if (e.target.closest('.audio-btn') || e.target.tagName === 'INPUT') return;
+                    const radio = div.querySelector('input[type="radio"]');
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change'));
+                });
+                const radio = div.querySelector('input[type="radio"]');
+                radio.addEventListener('change', () => {
+                    container.querySelectorAll('.audio-item').forEach(g => g.classList.remove('selected'));
+                    div.classList.add('selected');
+                });
+                container.appendChild(div);
+            });
+        })();
+
+        // Q4 音频网格布局（3×2）使用 wav 文件
+        (function() {
+            const container = document.getElementById('q4NoiseNight');
+            const q4Options = [
+                { key: 'below30', label: '＜30 dB', desc: '几乎完全无感', audio: 'assets/a.wav' },
+                { key: '30to40',  label: '30–40 dB', desc: '非常轻微存在感', audio: 'assets/b.wav' },
+                { key: '40to50',  label: '40–50 dB', desc: '清晰可感知，但不干扰交流', audio: 'assets/c.wav' },
+                { key: '50to60',  label: '50–60 dB', desc: '明显运行声，需要提高说话音量', audio: 'assets/d.wav' },
+                { key: '60to70',  label: '60–70 dB', desc: '较强噪音，接近家用吸尘器低档', audio: 'assets/e.wav' },
+                { key: 'above70', label: '＞70 dB', desc: '强噪音，明显干扰环境', audio: 'assets/f.wav' },
+            ];
+            let currentAudio = null;
+            let currentBtn = null;
+            q4Options.forEach(opt => {
+                const div = document.createElement('div');
+                div.className = 'audio-item';
+                div.innerHTML = `
+                    <div class="audio-btn" data-key="${opt.key}">
+                        <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <svg class="icon-pause" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; width:100%;">
+                        <input type="radio" name="q4NoiseNight" value="${opt.key}" class="radio-input" id="q4NoiseNight_${opt.key}" style="margin-right:4px;">
+                        <div class="audio-text">
+                            <strong>${opt.label}</strong>
+                            <div class="option-desc">${opt.desc}</div>
+                        </div>
+                    </div>
+                `;
+                // 播放按钮
+                const btn = div.querySelector('.audio-btn');
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (currentAudio && currentBtn === btn) {
+                        currentAudio.pause();
+                        currentAudio.currentTime = 0;
+                        currentAudio = null;
+                        btn.classList.remove('playing');
+                        btn.querySelector('.icon-play').style.display = '';
+                        btn.querySelector('.icon-pause').style.display = 'none';
+                        currentBtn = null;
+                        return;
+                    }
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio.currentTime = 0;
+                        if (currentBtn) {
+                            currentBtn.classList.remove('playing');
+                            currentBtn.querySelector('.icon-play').style.display = '';
+                            currentBtn.querySelector('.icon-pause').style.display = 'none';
+                        }
+                    }
+                    const audio = new Audio(opt.audio);
+                    audio.play();
+                    currentAudio = audio;
+                    currentBtn = btn;
+                    window._q4Audio = audio;
+                    btn.classList.add('playing');
+                    btn.querySelector('.icon-play').style.display = 'none';
+                    btn.querySelector('.icon-pause').style.display = '';
+                    audio.addEventListener('ended', () => {
+                        btn.classList.remove('playing');
+                        btn.querySelector('.icon-play').style.display = '';
+                        btn.querySelector('.icon-pause').style.display = 'none';
+                        currentAudio = null;
+                        currentBtn = null;
+                        window._q4Audio = null;
+                    });
+                });
+                // 点击选项卡选中
+                div.addEventListener('click', (e) => {
+                    if (e.target.closest('.audio-btn') || e.target.tagName === 'INPUT') return;
+                    const radio = div.querySelector('input[type="radio"]');
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change'));
+                });
+                const radio = div.querySelector('input[type="radio"]');
+                radio.addEventListener('change', () => {
+                    container.querySelectorAll('.audio-item').forEach(g => g.classList.remove('selected'));
+                    div.classList.add('selected');
+                });
+                container.appendChild(div);
+            });
+        })();
+
+        buildRadioOptions('q5TradeOff', [
+            { key: 'silence_first', label: '优先静音，接受性能降低' },{ key: 'balance', label: '静音和性能平衡' },
+            { key: 'performance_first', label: '优先性能，声音可以接受' },{ key: 'no_reduce', label: '不希望降低任何性能' }
+        ]);
+        buildRadioOptions('q6Area', [
+            { key: 'under20', label: '20㎡以下' },{ key: '20-40', label: '20～40㎡' },
+            { key: '40-60', label: '40～60㎡' },{ key: 'above60', label: '60㎡以上' }
+        ]);
+        buildRadioOptions('q7Height', [
+            { key: 'below2.5', label: '2.5米以下', desc: '普通小户型' },
+            { key: '2.5-2.8', label: '2.5～2.8米', desc: '常见住宅' },
+            { key: '2.8-3.2', label: '2.8～3.2米', desc: '较宽敞住宅' },
+            { key: 'above3.2', label: '3.2米以上', desc: '复式、挑高空间' }
+        ]);
+
+        // Q8 图片尺寸选项（2×2网格布局）
+        (function() {
+            const container = document.getElementById('q8SizeAccept');
+            const q8Options = [
+                { key: 'under20cm', label: '20cm以内', desc: '希望尽可能小巧', img: 'assets/20cm.jpg' },
+                { key: '20-30cm', label: '20～30cm', desc: '篮球大小', img: 'assets/25cm.jpg' },
+                { key: '30-40cm', label: '30～40cm', desc: '中等尺寸', img: 'assets/30cm.jpg' },
+                { key: '40-50cm', label: '40～50cm', desc: '较大设备', img: 'assets/40cm.jpg' },
+            ];
+            q8Options.forEach(opt => {
+                const div = document.createElement('div');
+                div.className = 'grid-item';
+                div.innerHTML = `
+                    <img src="${opt.img}" alt="${opt.label}" class="option-img">
+                    <div class="grid-label">
+                        <input type="radio" name="q8SizeAccept" value="${opt.key}" class="radio-input" id="q8SizeAccept_${opt.key}">
+                        <div class="grid-text">
+                            <strong>${opt.label}</strong>
+                            ${opt.desc ? `<div class="option-desc">${opt.desc}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+                div.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'INPUT') return;
+                    const radio = div.querySelector('input[type="radio"]');
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change'));
+                });
+                // 选中高亮
+                const radio = div.querySelector('input[type="radio"]');
+                radio.addEventListener('change', () => {
+                    container.querySelectorAll('.grid-item').forEach(g => g.classList.remove('selected'));
+                    div.classList.add('selected');
+                });
+                container.appendChild(div);
+            });
+            // 第五个选项（无图片，横跨整行）
+            const noLimitDiv = document.createElement('div');
+            noLimitDiv.className = 'option-item';
+            noLimitDiv.style.gridColumn = '1 / -1';
+            noLimitDiv.innerHTML = `
+                <input type="radio" name="q8SizeAccept" value="noLimit" class="radio-input" id="q8SizeAccept_noLimit" style="margin-right:14px;">
+                <label for="q8SizeAccept_noLimit" class="option-label" style="cursor:pointer;">
+                    <strong>尺寸不限，更关注功能</strong>
+                </label>
+            `;
+            noLimitDiv.addEventListener('click', (e) => {
+                if (e.target.tagName === 'INPUT') return;
+                const radio = noLimitDiv.querySelector('input[type="radio"]');
+                radio.checked = true;
+                radio.dispatchEvent(new Event('change'));
+            });
+            const noLimitRadio = noLimitDiv.querySelector('input[type="radio"]');
+            noLimitRadio.addEventListener('change', () => {
+                container.querySelectorAll('.grid-item').forEach(g => g.classList.remove('selected'));
+            });
+            container.appendChild(noLimitDiv);
+        })();
+
+        buildRadioOptions('q9SizeOppressive', [
+            { key: '20cm', label: '20cm以上就会明显感觉存在' },{ key: '30cm', label: '30cm以上开始影响空间感' },
+            { key: '40cm', label: '40cm以上才会感觉偏大' },{ key: '50cm', label: '50cm以上才会影响使用' },
+            { key: 'noLimit', label: '任何尺寸都可以接受，只要功能有价值' }
+        ]);
+        buildRadioOptions('q10Presence', [
+            { key: 'speaker', label: '像智能音箱一样，安静存在' },{ key: 'pet', label: '像宠物一样，会主动靠近和互动' },
+            { key: 'hide', label: '只在需要时出现，平时隐藏' },{ key: 'function', label: '无所谓，功能优先' }
+        ]);
+        buildRadioOptions('q11Feeling', [
+            { key: 'natural', label: '很自然，像家庭成员一样' },{ key: 'distance', label: '可以接受，但需要保持一定距离' },
+            { key: 'pressure', label: '会感觉有压力，希望离远一点' },{ key: 'no_close', label: '不希望机器人长时间靠近' }
+        ]);
+        buildRadioOptions('q12SizeImp', [
+            { key: 'smaller', label: '越小越好' },{ key: 'moderate', label: '尺寸适中即可' },
+            { key: 'size_func', label: '功能优先，尺寸可以大一些' }
+        ]);
+        buildRadioOptions('q12SoundImp', [
+            { key: 'quieter', label: '越安静越好' },{ key: 'balance', label: '平衡即可' },
+            { key: 'sound_func', label: '功能优先，声音可接受' }
+        ]);
+
+        // ==================== 提交验证 ====================
+        function getRadioVal(name) { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : null; }
+        function getCheckboxVals(name) { return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(el => el.value); }
+
+        const questionMap = {
+            'q3NoiseDay': '3. 白天日常活动时，机器人最大的可接受运行声音',
+            'q4NoiseNight': '4. 夜晚睡眠、阅读、休息环境中，希望机器人运行声音',
+            'q5TradeOff': '5. 降低噪音需降低部分飞行性能，您的选择',
+            'q6Area': '6. 客厅/主要活动空间面积',
+            'q7Height': '7. 室内层高',
+            'q8SizeAccept': '8. 能接受最大的机器人尺寸',
+            'q9SizeOppressive': '9. 机器人多大尺寸会感觉占空间或影响活动',
+            'q10Presence': '10. 机器人长期陪伴，更喜欢的模式',
+            'q11Feeling': '11. 机器人在附近悬停时的感受',
+            'q12SizeImp': '12. 关于尺寸的看重程度',
+            'q12SoundImp': '12. 关于声音的看重程度'
+        };
+
+        function showGlobalError(msg) {
+            const res = document.getElementById('globalResult');
+            res.style.display = 'block'; res.style.background = '#fee2e2'; res.style.borderColor = '#fecaca'; res.style.color = '#991b1b';
+            res.innerHTML = msg;
+        }
+
+        document.getElementById('submitAllBtn').addEventListener('click', async () => {
+            const errors = [];
+
+            // 基础背景信息验证
+            if (!getRadioVal('bgGender')) errors.push('性别 未选择。');
+            if (!getRadioVal('bgAge')) errors.push('年龄 未选择。');
+            const occupation = getRadioVal('bgOccupation');
+            if (!occupation) errors.push('职业身份 未选择。');
+            else if (occupation === 'other_occ' && !document.getElementById('occupationOther').value.trim()) {
+                errors.push('请填写您的职业。');
+            }
+            const city = document.getElementById('cityInput').value.trim();
+            if (!city) errors.push('居住城市 未填写。');
+            if (!getRadioVal('bgIncome')) errors.push('月收入 未选择。');
+
+            const residenceType = getRadioVal('bgResidenceType');
+            if (!residenceType) errors.push('居住类型 未选择。');
+            else if (residenceType === 'other_res' && !document.getElementById('residenceOther').value.trim()) {
+                errors.push('请填写您的居住类型。');
+            }
+
+            const roomLayout = getRadioVal('bgRoomLayout');
+            if (!roomLayout) errors.push('户型 未选择。');
+            else if (roomLayout === 'other_layout' && !document.getElementById('layoutOther').value.trim()) {
+                errors.push('请填写您的户型。');
+            }
+
+            // Q1
+            const hasPet = getRadioVal('q1HasPet');
+            if (!hasPet) errors.push('1. 您家中目前是否养宠物？ 未选择。');
+            else if (hasPet === 'yes') {
+                if (getCheckboxVals('petType').length === 0 && !document.getElementById('petTypeOther').value.trim()) {
+                    errors.push('1. 养宠物：请至少选择一种宠物类型或填写其他。');
+                }
+                if (!getRadioVal('petWeight')) errors.push('1. 宠物体重：请选择体重范围。');
+            }
+            // Q2
+            const elderChecked = hasElderCheck.checked;
+            const childChecked = hasChildCheck.checked;
+            const noneChecked = hasNoneCheck.checked;
+            if (!elderChecked && !childChecked && !noneChecked) errors.push('2. 请勾选至少一项（有老人/有儿童/均无）。');
+            if (elderChecked && !getRadioVal('elderAgeOptions')) errors.push('2. 有老人：请选择老人年龄。');
+            if (childChecked && !getRadioVal('childAgeOptions')) errors.push('2. 有儿童：请选择儿童年龄。');
+
+            // Q3-Q12
+            Object.entries(questionMap).forEach(([name, title]) => {
+                if (!getRadioVal(name)) errors.push(`${title} 未选择。`);
+            });
+
+            if (errors.length > 0) {
+                showGlobalError('❌ ' + errors.join('<br>'));
+                return;
+            }
+
+            // 构造 webhook 请求数据
+            const getLabel = (list, key) => (list.find(o => o.key === key) || {}).label || key;
+            const payload = {
+                // 基础背景信息
+                '性别': getLabel([{key:'male',label:'男'},{key:'female',label:'女'}], getRadioVal('bgGender')),
+                '年龄': getLabel([{key:'under18',label:'18岁以下'},{key:'18-25',label:'18～25岁'},{key:'26-35',label:'26～35岁'},{key:'36-45',label:'36～45岁'},{key:'46-55',label:'46～55岁'},{key:'56+',label:'56岁以上'}], getRadioVal('bgAge')),
+                '职业身份': occupation === 'other_occ' ? document.getElementById('occupationOther').value.trim() : getLabel([{key:'student',label:'学生'},{key:'employee',label:'上班族（企业/公务员/事业单位）'},{key:'freelancer',label:'自由职业'},{key:'retired',label:'退休'}], occupation),
+                '居住城市': city,
+                '月收入': getLabel([{key:'under3000',label:'3000元以下'},{key:'3000-6000',label:'3000～6000元'},{key:'6000-10000',label:'6000～10000元'},{key:'10000-20000',label:'10000～20000元'},{key:'20000+',label:'20000元以上'},{key:'no_answer',label:'不愿透露'}], getRadioVal('bgIncome')),
+                '居住类型': residenceType === 'other_res' ? document.getElementById('residenceOther').value.trim() : getLabel([{key:'apartment',label:'居民小区（多层/高层）'},{key:'bungalow',label:'平房/胡同'},{key:'villa',label:'别墅/排屋'},{key:'commercial',label:'商住两用'},{key:'other_res',label:'其他'}], residenceType),
+                '户型': roomLayout === 'other_layout' ? document.getElementById('layoutOther').value.trim() : getLabel([{key:'1-1',label:'1室1厅'},{key:'2-1',label:'2室1厅'},{key:'2-2',label:'2室2厅'},{key:'3-1',label:'3室1厅'},{key:'3-2',label:'3室2厅'},{key:'4plus',label:'4室及以上'},{key:'other_layout',label:'其他'}], roomLayout),
+                // Q1 宠物
+                '是否养宠物': hasPet === 'yes' ? '有宠物' : '没有宠物',
+                '宠物类型': hasPet === 'yes' ? (getCheckboxVals('petType').map(v => getLabel([{key:'cat',label:'猫'},{key:'dog',label:'狗'},{key:'bird',label:'鸟类'},{key:'small',label:'小型动物'}], v)).join('、') + (document.getElementById('petTypeOther').value ? '、其他：' + document.getElementById('petTypeOther').value : '')) : '',
+                '宠物体重': hasPet === 'yes' ? getLabel([{key:'under1kg',label:'1kg以下'},{key:'1to5',label:'1～5kg'},{key:'5to10',label:'5～10kg'},{key:'10to20',label:'10～20kg'},{key:'above20',label:'20kg以上'}], getRadioVal('petWeight')) : '',
+                // Q2 老人/儿童
+                '有老人': elderChecked ? '是（' + getLabel([{key:'50-60',label:'50～60岁'},{key:'60-70',label:'60～70岁'},{key:'70-80',label:'70～80岁'},{key:'80+',label:'80岁以上'}], getRadioVal('elderAgeOptions')) + '）' : '否',
+                '有儿童': childChecked ? '是（' + getLabel([{key:'0-3',label:'0～3岁'},{key:'4-6',label:'4～6岁'},{key:'7-12',label:'7～12岁'},{key:'12+',label:'12岁以上'}], getRadioVal('childAgeOptions')) + '）' : '否',
+                '均无': noneChecked ? '是' : '否',
+                // Q3-Q12
+                'Q3-白天可接受噪音': getLabel(noiseLevels, getRadioVal('q3NoiseDay')),
+                'Q4-夜晚期望运行声音': getLabel(noiseLevels, getRadioVal('q4NoiseNight')),
+                'Q5-降噪与性能取舍': getLabel([{key:'silence_first',label:'优先静音，接受性能降低'},{key:'balance',label:'静音和性能平衡'},{key:'performance_first',label:'优先性能，声音可以接受'},{key:'no_reduce',label:'不希望降低任何性能'}], getRadioVal('q5TradeOff')),
+                'Q6-客厅面积': getLabel([{key:'under20',label:'20㎡以下'},{key:'20-40',label:'20～40㎡'},{key:'40-60',label:'40～60㎡'},{key:'above60',label:'60㎡以上'}], getRadioVal('q6Area')),
+                'Q7-室内层高': getLabel([{key:'below2.5',label:'2.5米以下'},{key:'2.5-2.8',label:'2.5～2.8米'},{key:'2.8-3.2',label:'2.8～3.2米'},{key:'above3.2',label:'3.2米以上'}], getRadioVal('q7Height')),
+                'Q8-接受最大尺寸': getLabel([{key:'under20cm',label:'20cm以内'},{key:'20-30cm',label:'20～30cm'},{key:'30-40cm',label:'30～40cm'},{key:'40-50cm',label:'40～50cm'},{key:'noLimit',label:'尺寸不限'}], getRadioVal('q8SizeAccept')),
+                'Q9-压抑尺寸阈值': getLabel([{key:'20cm',label:'20cm以上'},{key:'30cm',label:'30cm以上'},{key:'40cm',label:'40cm以上'},{key:'50cm',label:'50cm以上'},{key:'noLimit',label:'任何尺寸均可'}], getRadioVal('q9SizeOppressive')),
+                'Q10-存在方式偏好': getLabel([{key:'speaker',label:'安静存在'},{key:'pet',label:'主动互动'},{key:'hide',label:'需要时出现'},{key:'function',label:'功能优先'}], getRadioVal('q10Presence')),
+                'Q11-靠近感受': getLabel([{key:'natural',label:'很自然'},{key:'distance',label:'保持距离'},{key:'pressure',label:'有压力'},{key:'no_close',label:'不希望靠近'}], getRadioVal('q11Feeling')),
+                'Q12-尺寸看重': getLabel([{key:'smaller',label:'越小越好'},{key:'moderate',label:'适中即可'},{key:'size_func',label:'功能优先'}], getRadioVal('q12SizeImp')),
+                'Q12-声音看重': getLabel([{key:'quieter',label:'越安静越好'},{key:'balance',label:'平衡即可'},{key:'sound_func',label:'功能优先'}], getRadioVal('q12SoundImp')),
+                'Q13-最担心的问题': document.getElementById('q13Concern').value.trim() || '未填写',
+                // 元数据
+                '提交时间': new Date().toLocaleString('zh-CN')
+            };
+
+            // 禁用提交按钮，显示加载状态
+            const submitBtn = document.getElementById('submitAllBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ 提交中...';
+
+            // 发送 webhook 请求
+            const webhookUrl = 'https://www.kdocs.cn/chatflow/api/v2/func/webhook/3FwAAAmi0cVtPGhKKoFIF5dqRXc';
+            try {
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) {
+                    window.location.href = 'done.html';
+                } else {
+                    showGlobalError('❌ 提交失败（HTTP ' + response.status + '），请稍后重试。');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '📤 提交全部答案';
+                }
+            } catch (err) {
+                showGlobalError('❌ 网络错误，请检查网络连接后重试。');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📤 提交全部答案';
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            stopAllSound();
+            if (audioCtx) audioCtx.close();
+        });
+    })();
+</script>
+</body>
+</html>
