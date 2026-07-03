@@ -918,21 +918,28 @@
             submitBtn.disabled = true;
             submitBtn.textContent = '⏳ 提交中...';
 
-            // 发送 webhook 请求
-            const webhookUrl = 'https://www.kdocs.cn/chatflow/api/v2/func/webhook/3FwAAAmi0cVtPGhKKoFIF5dqRXc';
-            try {
-                const response = await fetch(webhookUrl, {
+            // 发送提交请求
+            const apiUrl = window.SURVEY_API_URL || 'https://hoomiey-form-klpnspdclc.cn-hangzhou.fcapp.run/api/submit';
+
+            const postJson = async (url) => {
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                return response;
+            };
+
+            try {
+                const response = await postJson(apiUrl);
                 if (response.ok) {
                     window.location.href = 'done.html';
-                } else {
-                    showGlobalError('❌ 提交失败（HTTP ' + response.status + '），请稍后重试。');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '📤 提交全部答案';
+                    return;
                 }
+
+                showGlobalError('❌ 提交失败（HTTP ' + response.status + '），请稍后重试。');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📤 提交全部答案';
             } catch (err) {
                 showGlobalError('❌ 网络错误，请检查网络连接后重试。');
                 submitBtn.disabled = false;
